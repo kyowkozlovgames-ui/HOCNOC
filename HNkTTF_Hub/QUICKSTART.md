@@ -4,7 +4,7 @@
 
 ### Via Loadstring (Mais fácil)
 ```lua
-loadstring(game:HttpGet("https://seu-url/HNkTTF_Hub/main.lua"))()
+-- loadstring(game:HttpGet("https://seu-url/HNkTTF_Hub/main.lua"))()
 ```
 
 ### Local (Se tiver acesso ao arquivo)
