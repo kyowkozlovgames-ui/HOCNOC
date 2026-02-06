@@ -21,6 +21,10 @@ local CoreGui = game:GetService("CoreGui")
 local player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+if not player or not Camera then
+    warn("[HNk WARNING]: Game environment not properly initialized!")
+end
+
 -- ===================================
 -- THEMES MODULE (Inline)
 -- ===================================
