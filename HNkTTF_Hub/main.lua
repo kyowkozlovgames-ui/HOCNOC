@@ -3,8 +3,7 @@
 -- Modular Programming Edition
 -- ===================================
 
--- Load external emotes script
-loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-GJ-PRO-Emotes-83556"))()
+-- Load external emotes script (optional, wrapped in pcall)
 
 print("HNk TTF HUB v9.4.3 loading: Fixed duplicated emojis in tab labels.")
 
