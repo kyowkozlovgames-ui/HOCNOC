@@ -221,29 +221,49 @@ local Remotes = {
 }
 
 function Remotes:Initialize()
-    self.trainEquipment = ReplicatedStorage:WaitForChild("TrainEquipment", 15):WaitForChild("Remote", 15)
-    self.trainSystem = ReplicatedStorage:WaitForChild("TrainSystem", 15):WaitForChild("Remote", 15)
-    self.takeUp = self.trainEquipment:WaitForChild("ApplyTakeUpStationaryTrainEquipment", 15)
-    self.statEffect = self.trainEquipment:WaitForChild("ApplyBindingTrainingEffect", 15)
-    self.boostEffect = self.trainEquipment:WaitForChild("ApplyBindingTrainingBoostEffect", 15)
-    self.speedRemote = self.trainSystem:WaitForChild("TrainSpeedHasChanged", 15)
-    print("[HNk Remotes]: All remotes loaded successfully")
+    local success = pcall(function()
+        self.trainEquipment = ReplicatedStorage:WaitForChild("TrainEquipment", 20)
+        if self.trainEquipment then
+            self.trainEquipment = self.trainEquipment:WaitForChild("Remote", 20)
+        end
+        
+        self.trainSystem = ReplicatedStorage:WaitForChild("TrainSystem", 20)
+        if self.trainSystem then
+            self.trainSystem = self.trainSystem:WaitForChild("Remote", 20)
+        end
+        
+        if self.trainEquipment then
+            self.takeUp = self.trainEquipment:WaitForChild("ApplyTakeUpStationaryTrainEquipment", 20)
+            self.statEffect = self.trainEquipment:WaitForChild("ApplyBindingTrainingEffect", 20)
+            self.boostEffect = self.trainEquipment:WaitForChild("ApplyBindingTrainingBoostEffect", 20)
+        end
+        
+        if self.trainSystem then
+            self.speedRemote = self.trainSystem:WaitForChild("TrainSpeedHasChanged", 20)
+        end
+    end)
+    
+    if success then
+        print("[HNk Remotes]: All remotes loaded successfully")
+    else
+        print("[HNk Remotes]: Warning - Some remotes failed to load. Training features may not work.")
+    end
 end
 
 function Remotes:InvokeTakeUp()
-    pcall(function() self.takeUp:InvokeServer(true) end)
+    if self.takeUp then pcall(function() self.takeUp:InvokeServer(true) end) end
 end
 
 function Remotes:InvokeStatEffect()
-    pcall(function() self.statEffect:InvokeServer() end)
+    if self.statEffect then pcall(function() self.statEffect:InvokeServer() end) end
 end
 
 function Remotes:InvokeBoostEffect()
-    pcall(function() self.boostEffect:InvokeServer() end)
+    if self.boostEffect then pcall(function() self.boostEffect:InvokeServer() end) end
 end
 
 function Remotes:FireSpeedRemote()
-    pcall(function() self.speedRemote:FireServer(9999) end)
+    if self.speedRemote then pcall(function() self.speedRemote:FireServer(9999) end) end
 end
 
 -- ===================================
@@ -465,9 +485,10 @@ end
 -- FEATURES: PLAYER (Inline)
 -- ===================================
 
-local PlayerFeature = {heartbeatConnection = nil}
+local PlayerFeature = {heartbeatConnection = nil, remotes = nil}
 
 function PlayerFeature:Start(remotes)
+    self.remotes = remotes
     if self.heartbeatConnection then return end
     self.heartbeatConnection = RunService.Heartbeat:Connect(function()
         if not player.Character then return end
@@ -479,7 +500,9 @@ function PlayerFeature:Start(remotes)
                 hum.BreakJointsOnDeath = (not getgenv().HNk.AntiFall)
             end
         end
-        if getgenv().HNk.Train or getgenv().HNk.Speed then remotes:FireSpeedRemote() end
+        if (getgenv().HNk.Train or getgenv().HNk.Speed) and self.remotes and self.remotes.speedRemote then
+            self.remotes:FireSpeedRemote()
+        end
     end)
     print("[HNk Player]: Player features initialized")
 end
@@ -496,8 +519,12 @@ end
 local CameraFeature = {cameraConnection = nil, mouseScrollConnection = nil}
 
 function CameraFeature:UpdateFOV(fovValue)
-    if Camera and Camera.CameraType ~= Enum.CameraType.Scriptable then
-        Camera.FieldOfView = fovValue
+    if Camera and fovValue then
+        pcall(function()
+            if Camera.CameraType ~= Enum.CameraType.Scriptable then
+                Camera.FieldOfView = fovValue
+            end
+        end)
     end
 end
 
@@ -506,7 +533,7 @@ function CameraFeature:SetupMouseScroll()
     self.mouseScrollConnection = UserInputService.InputChanged:Connect(function(input)
         if not getgenv().HNk or not getgenv().HNk.FOVMOUSECONTROL then return end
         if input.UserInputType ~= Enum.UserInputType.MouseWheel then return end
-        if Camera.CameraType == Enum.CameraType.Scriptable then return end
+        if Camera and Camera.CameraType == Enum.CameraType.Scriptable then return end
 
         local delta = input.Position.Z
         local fovChange = -delta * 5
@@ -525,10 +552,12 @@ function CameraFeature:StartHeartbeat()
     self.cameraConnection = RunService.Heartbeat:Connect(function()
         if Camera and getgenv().HNk and getgenv().HNk.FOV then
             if Camera.FieldOfView ~= getgenv().HNk.FOV then
-                if Camera.CameraType ~= Enum.CameraType.Custom and Camera.CameraType ~= Enum.CameraType.Watch then
-                    Camera.CameraType = Enum.CameraType.Custom
-                end
-                Camera.FieldOfView = getgenv().HNk.FOV
+                pcall(function()
+                    if Camera.CameraType ~= Enum.CameraType.Custom and Camera.CameraType ~= Enum.CameraType.Watch then
+                        Camera.CameraType = Enum.CameraType.Custom
+                    end
+                    Camera.FieldOfView = getgenv().HNk.FOV
+                end)
             end
         end
     end)
@@ -543,7 +572,11 @@ local ToggleManager = {}
 function ToggleManager:HandleToggle(toggleName, isEnabled, remotes)
     if isEnabled then
         if toggleName == "Train" then
-            TrainingFeature:Start(remotes)
+            if remotes and remotes.takeUp then
+                TrainingFeature:Start(remotes)
+            else
+                print("[HNk Training]: Remotes not loaded, skipping...")
+            end
         elseif toggleName == "AntiAFK" then
             MiscFeatures:StartAntiAFK()
         elseif toggleName == "AntiFall" then
@@ -619,8 +652,10 @@ local toggleElements = {}
 local fovSliderElement = nil
 local performanceOverlayLabel = nil
 
--- Initialize Remotes
-Remotes:Initialize()
+-- Initialize Remotes (with error handling)
+task.spawn(function()
+    Remotes:Initialize()
+end)
 
 -- Initialize Features
 ESPFeature:Initialize()
