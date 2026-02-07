@@ -161,21 +161,23 @@ local modulesData = ModulesData:GetModulesData()
 local tabOrder = ModulesData:GetTabOrder()
 
 local function switchTab(tabName, tabButton)
-    for _, btn in GUIBuilder.navFrame:GetChildren() do
-        if btn:IsA("TextButton") then
-            btn.BackgroundColor3 = DARK_BG
-            btn.BackgroundTransparency = 0.5
-            btn.TextColor3 = ACCENT_OFF
-            local stroke = btn:FindFirstChild("UIStroke")
-            if stroke then stroke:Destroy() end
+    if GUIBuilder.navFrame then
+        for _, btn in ipairs(GUIBuilder.navFrame:GetChildren()) do
+            if btn and btn:IsA and btn:IsA("TextButton") then
+                btn.BackgroundColor3 = DARK_BG
+                btn.BackgroundTransparency = 0.5
+                btn.TextColor3 = ACCENT_OFF
+                local stroke = btn:FindFirstChild("UIStroke")
+                if stroke then stroke:Destroy() end
+            end
         end
     end
 
     for name, frame in pairs(GUIBuilder.tabContents) do
-        frame.Visible = (name == tabName)
+        if frame then frame.Visible = (name == tabName) end
     end
 
-    if tabButton then
+    if tabButton and tabButton.Parent then
         tabButton.BackgroundColor3 = ACCENT_ON
         tabButton.BackgroundTransparency = 0.8
         tabButton.TextColor3 = PRIMARY_BG
@@ -185,7 +187,6 @@ local function switchTab(tabName, tabButton)
         stroke.Transparency = 0
     end
 end
-
 for order, tabName in ipairs(tabOrder) do
     local modules = modulesData[tabName]
 
@@ -325,7 +326,8 @@ for order, tabName in ipairs(tabOrder) do
 end
 
 -- Show default tab
-switchTab("Shadow Core", GUIBuilder.navFrame:FindFirstChild("ShadowCoreNavBtn"))
+local defaultBtn = (GUIBuilder.navFrame and GUIBuilder.navFrame:FindFirstChild("ShadowCoreNavBtn")) or nil
+switchTab("Shadow Core", defaultBtn)
 
 -- Create close button
 local close = Instance.new("TextButton", title)
@@ -357,19 +359,20 @@ Instance.new("UIStroke", minimize).Thickness = 1
 local isMinimized = false
 minimize.MouseButton1Click:Connect(function()
     isMinimized = not isMinimized
-    if isMinimized then
-        GUIBuilder.fr.Size = UDim2.new(0, 320, 0, GUIBuilder.MINIMIZED_HEIGHT)
-        GUIBuilder.navFrame.Visible = false
-        GUIBuilder.contentFrame.Visible = false
-        minimize.Text = "+"
-    else
-        GUIBuilder.fr.Size = UDim2.new(0, GUIBuilder.INITIAL_WIDTH, 0, GUIBuilder.INITIAL_HEIGHT)
-        GUIBuilder.navFrame.Visible = true
-        GUIBuilder.contentFrame.Visible = true
-        minimize.Text = "—"
+    if GUIBuilder.fr then
+        if isMinimized then
+            GUIBuilder.fr.Size = UDim2.new(0, 320, 0, GUIBuilder.MINIMIZED_HEIGHT)
+            if GUIBuilder.navFrame then GUIBuilder.navFrame.Visible = false end
+            if GUIBuilder.contentFrame then GUIBuilder.contentFrame.Visible = false end
+            minimize.Text = "+"
+        else
+            GUIBuilder.fr.Size = UDim2.new(0, GUIBuilder.INITIAL_WIDTH, 0, GUIBuilder.INITIAL_HEIGHT)
+            if GUIBuilder.navFrame then GUIBuilder.navFrame.Visible = true end
+            if GUIBuilder.contentFrame then GUIBuilder.contentFrame.Visible = true end
+            minimize.Text = "—"
+        end
     end
 end)
-
 -- ===================================
 -- INITIALIZE FEATURES
 -- ===================================
