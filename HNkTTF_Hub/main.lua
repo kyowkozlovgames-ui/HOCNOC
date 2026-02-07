@@ -11,7 +11,47 @@ print("HNk TTF HUB v9.4.3 loading: Fixed duplicated emojis in tab labels.")
 -- LOAD ALL MODULES
 -- ===================================
 
-local modulePath = script.Parent:WaitForChild("modules")
+local function findModulesFolder()
+    local Players = game:GetService("Players")
+    if typeof(script) == "Instance" and script.Parent then
+        local m = script.Parent:FindFirstChild("modules")
+        if m then return m end
+    end
+
+    local searchPlaces = {
+        game:GetService("CoreGui"),
+        game:GetService("ReplicatedStorage"),
+        game:GetService("StarterGui"),
+        game:GetService("Workspace"),
+        Players.LocalPlayer and Players.LocalPlayer:FindFirstChild("PlayerGui") or nil,
+    }
+
+    for _, place in ipairs(searchPlaces) do
+        if place and place.FindFirstChild then
+            local m = place:FindFirstChild("modules")
+            if m then return m end
+            for _, child in ipairs(place:GetChildren()) do
+                if child and child.FindFirstChild then
+                    local m2 = child:FindFirstChild("modules")
+                    if m2 then return m2 end
+                end
+            end
+        end
+    end
+
+    for _, d in ipairs(game:GetService("CoreGui"):GetDescendants()) do
+        if d.Name == "modules" then
+            return d
+        end
+    end
+
+    return nil
+end
+
+local modulePath = findModulesFolder()
+if not modulePath then
+    error("[HNk Main]: Não foi possível encontrar a pasta 'modules'. Verifique onde o script está inserido (deve haver uma pasta 'modules' dentro do container do hub).")
+end
 
 local Themes = require(modulePath.config.themes)
 local Settings = require(modulePath.config.settings)
