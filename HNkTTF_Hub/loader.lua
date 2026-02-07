@@ -225,33 +225,34 @@ local Remotes = {
 }
 
 function Remotes:Initialize()
-    local success = pcall(function()
-        self.trainEquipment = ReplicatedStorage:WaitForChild("TrainEquipment", 20)
-        if self.trainEquipment then
-            self.trainEquipment = self.trainEquipment:WaitForChild("Remote", 20)
+    -- Silently try to initialize without blocking
+    pcall(function()
+        if not ReplicatedStorage then return end
+        
+        local trainEquip = ReplicatedStorage:FindFirstChild("TrainEquipment")
+        if trainEquip then
+            local remote = trainEquip:FindFirstChild("Remote")
+            if remote then
+                self.trainEquipment = remote
+                self.takeUp = remote:FindFirstChild("ApplyTakeUpStationaryTrainEquipment")
+                self.statEffect = remote:FindFirstChild("ApplyBindingTrainingEffect")
+                self.boostEffect = remote:FindFirstChild("ApplyBindingTrainingBoostEffect")
+            end
         end
         
-        self.trainSystem = ReplicatedStorage:WaitForChild("TrainSystem", 20)
-        if self.trainSystem then
-            self.trainSystem = self.trainSystem:WaitForChild("Remote", 20)
+        local trainSys = ReplicatedStorage:FindFirstChild("TrainSystem")
+        if trainSys then
+            local remote = trainSys:FindFirstChild("Remote")
+            if remote then
+                self.trainSystem = remote
+                self.speedRemote = remote:FindFirstChild("TrainSpeedHasChanged")
+            end
         end
         
-        if self.trainEquipment then
-            self.takeUp = self.trainEquipment:WaitForChild("ApplyTakeUpStationaryTrainEquipment", 20)
-            self.statEffect = self.trainEquipment:WaitForChild("ApplyBindingTrainingEffect", 20)
-            self.boostEffect = self.trainEquipment:WaitForChild("ApplyBindingTrainingBoostEffect", 20)
-        end
-        
-        if self.trainSystem then
-            self.speedRemote = self.trainSystem:WaitForChild("TrainSpeedHasChanged", 20)
+        if self.takeUp then
+            print("[HNk Remotes]: Training remotes loaded successfully")
         end
     end)
-    
-    if success then
-        print("[HNk Remotes]: All remotes loaded successfully")
-    else
-        print("[HNk Remotes]: Warning - Some remotes failed to load. Training features may not work.")
-    end
 end
 
 function Remotes:InvokeTakeUp()
@@ -656,16 +657,22 @@ local toggleElements = {}
 local fovSliderElement = nil
 local performanceOverlayLabel = nil
 
--- Initialize Remotes (with error handling)
-task.spawn(function()
-    Remotes:Initialize()
-end)
+-- Initialize Remotes (no blocking)
+Remotes:Initialize()
 
 -- Initialize Features
 ESPFeature:Initialize()
 PlayerFeature:Start(Remotes)
 CameraFeature:SetupMouseScroll()
 CameraFeature:StartHeartbeat()
+
+-- Try to find remotes later if they weren't found initially
+task.spawn(function()
+    task.wait(5)
+    if not Remotes.takeUp then
+        Remotes:Initialize()
+    end
+end)
 
 -- Create GUI
 local sg = Instance.new("ScreenGui")
