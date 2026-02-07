@@ -163,7 +163,7 @@ local tabOrder = ModulesData:GetTabOrder()
 local function switchTab(tabName, tabButton)
     if GUIBuilder.navFrame then
         for _, btn in ipairs(GUIBuilder.navFrame:GetChildren()) do
-            if btn and btn:IsA and btn:IsA("TextButton") then
+            if btn and btn.IsA and btn:IsA("TextButton") then
                 btn.BackgroundColor3 = DARK_BG
                 btn.BackgroundTransparency = 0.5
                 btn.TextColor3 = ACCENT_OFF
